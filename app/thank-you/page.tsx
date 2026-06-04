@@ -1,6 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import Link from 'next/link'
+import TickerBanner from '@/app/components/TickerBanner'
 
 export default function ThankYouPage() {
   useEffect(() => {
@@ -11,6 +12,11 @@ export default function ThankYouPage() {
     <div style={{ minHeight: '100vh', fontFamily: 'var(--font-body)', display: 'flex', flexDirection: 'column' }}>
 
       <style>{`
+        .ty-white-top {
+          background: #fff;
+          padding: 72px 24px 0;
+          text-align: center;
+        }
         .ty-wrap {
           flex: 1;
           display: flex;
@@ -118,6 +124,7 @@ export default function ThankYouPage() {
         }
 
         @media (max-width: 640px) {
+          .ty-white-top { padding: 48px 24px 0; }
           .ty-wrap { padding: 64px 24px; }
           .ty-logo { height: 90px; margin-bottom: 36px; }
           .ty-h1 { font-size: 34px; }
@@ -125,6 +132,12 @@ export default function ThankYouPage() {
           .ty-btn { padding: 14px 40px; width: 100%; max-width: 280px; box-sizing: border-box; text-align: center; }
         }
       `}</style>
+
+      <div className="ty-white-top" />
+
+      <div style={{ background: '#fff' }}>
+        <TickerBanner />
+      </div>
 
       <main className="ty-wrap">
         <img

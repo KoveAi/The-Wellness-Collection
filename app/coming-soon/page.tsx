@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import TickerBanner from '@/app/components/TickerBanner'
 
 export default function ComingSoonPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,7 +20,12 @@ export default function ComingSoonPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim() }),
       })
-      setStatus(res.ok ? 'done' : 'error')
+      if (res.ok) {
+        ;(window as any).fbq?.('track', 'Lead')
+        router.push('/thank-you')
+      } else {
+        setStatus('error')
+      }
     } catch {
       setStatus('error')
     }
@@ -248,28 +255,7 @@ export default function ComingSoonPage() {
       {/* ── Email capture — beige ── */}
       <div className="cs-form-section">
         <div className="cs-form-inner">
-          {status === 'done' ? (
-            <div style={{ textAlign: 'center', padding: '8px 0' }}>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.35em', textTransform: 'uppercase', color: 'var(--mid)', margin: '0 0 20px' }}>
-                Gracefully Redefined
-              </p>
-              <div style={{ width: '40px', height: '1px', background: 'var(--mid)', margin: '0 auto 28px' }} />
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: 300, color: 'var(--text)', margin: '0 0 16px', lineHeight: 1.2 }}>
-                You&apos;re on the list.
-              </p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 300, fontStyle: 'italic', color: 'var(--text-muted)', margin: '0 0 28px', lineHeight: 1.75 }}>
-                We&apos;ll be in touch the moment we open our doors.
-              </p>
-              <div style={{ width: '40px', height: '1px', background: 'var(--mid)', margin: '0 auto 28px' }} />
-              <button
-                onClick={() => { setStatus('idle'); setFirstName(''); setLastName(''); setEmail('') }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)', opacity: 0.55 }}
-              >
-                ← Use a different email
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
               <div className="cs-form-row">
                 <input
                   type="text"
@@ -312,7 +298,6 @@ export default function ComingSoonPage() {
                 You&apos;ll receive meaningful emails. Never noise. Unsubscribe anytime.
               </p>
             </form>
-          )}
         </div>
       </div>
 

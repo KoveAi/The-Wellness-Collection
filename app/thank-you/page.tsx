@@ -4,7 +4,18 @@ import TickerBanner from '@/app/components/TickerBanner'
 
 export default function ThankYouPage() {
   useEffect(() => {
-    ;(window as any).fbq?.('track', 'CompleteRegistration')
+    let tries = 0
+    const fire = () => {
+      const fbq = (window as any).fbq
+      if (fbq) {
+        fbq('track', 'Lead')
+        fbq('track', 'CompleteRegistration')
+        return
+      }
+      // Pixel script may not have finished loading yet — retry briefly.
+      if (tries++ < 20) setTimeout(fire, 250)
+    }
+    fire()
   }, [])
 
   return (

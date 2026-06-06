@@ -21,7 +21,6 @@ export default function ComingSoonPage() {
         body: JSON.stringify({ name: `${firstName.trim()} ${lastName.trim()}`, email: email.trim() }),
       })
       if (res.ok) {
-        ;(window as any).fbq?.('track', 'Lead')
         router.push('/thank-you')
       } else {
         setStatus('error')

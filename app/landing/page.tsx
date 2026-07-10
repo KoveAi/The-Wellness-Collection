@@ -112,7 +112,7 @@ export default function LandingPage() {
         }
         .lp-h1 {
           font-family: var(--font-display);
-          font-size: 58px;
+          font-size: 50px;
           font-weight: 100;
           line-height: 1.08;
           color: var(--text);

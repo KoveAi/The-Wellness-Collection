@@ -112,7 +112,7 @@ export default function LandingPage() {
         }
         .lp-h1 {
           font-family: var(--font-display);
-          font-size: 72px;
+          font-size: 58px;
           font-weight: 100;
           line-height: 1.08;
           color: var(--text);
@@ -611,7 +611,7 @@ export default function LandingPage() {
         }
 
         @media (min-width: 641px) and (max-width: 960px) {
-          .lp-h1 { font-size: 46px !important; }
+          .lp-h1 { font-size: 42px !important; }
           .lp-pillars-grid { grid-template-columns: 1fr 1fr !important; }
           .lp-testimonials-grid { grid-template-columns: 1fr !important; }
         }

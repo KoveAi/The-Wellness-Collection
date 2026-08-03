@@ -45,22 +45,51 @@ function matchCandidates(email: string): string[] {
 }
 
 /**
- * True if this address is blocked, by exact match or by its domain.
+ * Returns the blocklist rule that catches this address — either the exact
+ * address or the "@domain" rule — or null if it isn't blocked.
+ *
  * Fails open: if the lookup errors, submissions are allowed through rather
  * than silently dropping legitimate sign-ups.
  */
-export async function isEmailBlocked(email: string): Promise<boolean> {
+export async function findBlockRule(email: string): Promise<string | null> {
   const candidates = matchCandidates(email)
-  if (candidates.length === 0) return false
+  if (candidates.length === 0) return null
 
   try {
     const hit = await prisma.blockedEmail.findFirst({
       where: { value: { in: candidates } },
-      select: { id: true },
+      select: { value: true },
     })
-    return hit !== null
+    return hit?.value ?? null
   } catch (err) {
     console.error('[blocklist] lookup failed:', err)
-    return false
+    return null
   }
+}
+
+/** Which form a turned-away submission came from. */
+export type BlockedForm = 'waitlist' | 'affirmation-cards' | 'contact' | 'register'
+
+/**
+ * Fire-and-forget record of a turned-away submission, so the admin panel can
+ * show who tried. Never throws and never blocks the response.
+ */
+export function recordBlockedAttempt(entry: {
+  email: string
+  form: BlockedForm
+  matched: string
+  name?: string | null
+  ip?: string | null
+}): void {
+  prisma.blockedAttempt
+    .create({
+      data: {
+        email: entry.email.trim().toLowerCase(),
+        form: entry.form,
+        matched: entry.matched,
+        name: entry.name?.trim() || null,
+        ip: entry.ip ?? null,
+      },
+    })
+    .catch(err => console.error('[blocklist] attempt log failed:', err))
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendWaitlistWelcomeEmail } from '@/lib/email'
-import { isEmailBlocked } from '@/lib/blocklist'
+import { findBlockRule, recordBlockedAttempt } from '@/lib/blocklist'
+import { getIp } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,9 @@ export async function POST(req: NextRequest) {
 
     // Blocked addresses get the normal success shape — nothing is stored,
     // nothing is sent, and the sender learns nothing about the blocklist.
-    if (await isEmailBlocked(email)) {
+    const matched = await findBlockRule(email)
+    if (matched) {
+      recordBlockedAttempt({ email, form: 'waitlist', matched, name, ip: getIp(req) })
       return NextResponse.json({ ok: true }, { status: 200 })
     }
 

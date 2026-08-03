@@ -7,6 +7,13 @@ import ManualEnrollment from './ManualEnrollment'
 import LeadsTable from './LeadsTable'
 import BlockedEmailsTable from './BlockedEmailsTable'
 
+const FORM_LABELS: Record<string, string> = {
+  waitlist: 'Waitlist',
+  'affirmation-cards': 'Affirmation Cards',
+  contact: 'Contact Form',
+  register: 'Registration',
+}
+
 export default async function AdminPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/dashboard')
@@ -46,7 +53,7 @@ export default async function AdminPage() {
   const monitorsUp     = betterMonitors.filter((m: any) => m.attributes?.status === 'up').length
 
   try {
-    const [users, courses, certificates, enrollments, auditLogs, wellnessLeads, blockedEmails] = await Promise.all([
+    const [users, courses, certificates, enrollments, auditLogs, wellnessLeads, blockedEmails, blockedAttempts] = await Promise.all([
       prisma.user.findMany({ where: { role: 'STUDENT' }, orderBy: { createdAt: 'desc' } }),
       prisma.course.findMany({
         orderBy: { order: 'asc' },
@@ -63,6 +70,7 @@ export default async function AdminPage() {
       prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
       prisma.wellnessLead.findMany({ orderBy: { createdAt: 'desc' } }),
       prisma.blockedEmail.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.blockedAttempt.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
     ])
 
     const stats = {
@@ -105,6 +113,48 @@ export default async function AdminPage() {
               Blocked Emails <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>— kept out of every sign-up form</span>
             </h2>
             <BlockedEmailsTable entries={blockedEmails} />
+          </section>
+
+          {/* Blocked Attempts */}
+          <section style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 400, color: 'var(--text)', marginBottom: '20px' }}>
+              Blocked Attempts <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>— sign-ups turned away, most recent first</span>
+            </h2>
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa', borderBottom: '1px solid var(--border)' }}>
+                    {['Email', 'Name', 'Form', 'Matched Rule', 'IP', 'When'].map(h => (
+                      <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {blockedAttempts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '14px' }}>
+                        No blocked attempts yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    blockedAttempts.map((attempt: any) => (
+                      <tr key={attempt.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '16px 20px', fontWeight: 500 }}>{attempt.email}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>{attempt.name || '—'}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                          {FORM_LABELS[attempt.form] ?? attempt.form}
+                        </td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>{attempt.matched}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>{attempt.ip || '—'}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px', whiteSpace: 'nowrap' }}>
+                          {new Date(attempt.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {/* Courses */}

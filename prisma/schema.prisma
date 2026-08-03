@@ -184,6 +184,21 @@ model BlockedEmail {
   createdAt DateTime @default(now())
 }
 
+/// One row per turned-away submission, so the admin can see who tried,
+/// which form they used, and which rule caught them.
+model BlockedAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  form      String
+  matched   String
+  name      String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
 model AuditLog {
   id        String   @id @default(cuid())
   action    String

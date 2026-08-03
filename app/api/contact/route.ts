@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { parseBody, contactSchema } from '@/lib/validate'
-import { isEmailBlocked } from '@/lib/blocklist'
+import { findBlockRule, recordBlockedAttempt } from '@/lib/blocklist'
+import { getIp } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   const limit = await checkRateLimit(req, 'contact')
@@ -16,7 +17,9 @@ export async function POST(req: NextRequest) {
 
   // Blocked senders get the normal success shape — the message is discarded
   // and never reaches the inbox.
-  if (await isEmailBlocked(email)) {
+  const matched = await findBlockRule(email)
+  if (matched) {
+    recordBlockedAttempt({ email, form: 'contact', matched, name, ip: getIp(req) })
     return NextResponse.json({ success: true })
   }
 

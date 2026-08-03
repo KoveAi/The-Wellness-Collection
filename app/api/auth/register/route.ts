@@ -7,7 +7,7 @@ import { sendVerificationEmail } from '@/lib/email'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { parseBody, registerSchema } from '@/lib/validate'
 import { audit, getIp } from '@/lib/audit'
-import { isEmailBlocked } from '@/lib/blocklist'
+import { findBlockRule, recordBlockedAttempt } from '@/lib/blocklist'
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
 
     // Registration can't fake success — a silent no-op would leave someone
     // unable to sign in with no explanation, so this one returns an error.
-    if (await isEmailBlocked(email)) {
+    const matched = await findBlockRule(email)
+    if (matched) {
+      recordBlockedAttempt({ email, form: 'register', matched, name, ip: getIp(req) })
       return NextResponse.json(
         { error: 'This email address cannot be used to register.' },
         { status: 403 }

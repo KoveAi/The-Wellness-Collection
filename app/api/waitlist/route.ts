@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendWaitlistWelcomeEmail } from '@/lib/email'
+import { isEmailBlocked } from '@/lib/blocklist'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,12 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Name and a valid email are required.' }, { status: 400 })
+    }
+
+    // Blocked addresses get the normal success shape — nothing is stored,
+    // nothing is sent, and the sender learns nothing about the blocklist.
+    if (await isEmailBlocked(email)) {
+      return NextResponse.json({ ok: true }, { status: 200 })
     }
 
     await prisma.wellnessLead.upsert({

@@ -175,6 +175,15 @@ model WellnessLead {
   createdAt DateTime @default(now())
 }
 
+/// Blocklist for opt-in forms. `value` is either a full lowercase address
+/// ("spammer@example.com") or a whole-domain rule ("@example.com").
+model BlockedEmail {
+  id        String   @id @default(cuid())
+  value     String   @unique
+  note      String?
+  createdAt DateTime @default(now())
+}
+
 model AuditLog {
   id        String   @id @default(cuid())
   action    String

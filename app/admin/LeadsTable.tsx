@@ -8,6 +8,30 @@ export default function LeadsTable({ leads }: { leads: Lead[] }) {
   const router = useRouter()
   const [list, setList] = useState(leads)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [blocking, setBlocking] = useState<string | null>(null)
+
+  async function handleBlock(lead: Lead) {
+    if (!confirm(`Block ${lead.email}? They'll be removed from the waitlist and can't sign up again.`)) return
+    setBlocking(lead.id)
+    try {
+      const res = await fetch('/api/admin/blocked-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: lead.email, note: `Blocked from waitlist — ${lead.name}` }),
+      })
+      if (!res.ok) {
+        const { error } = await res.json()
+        alert(error ?? 'Failed to block address.')
+        return
+      }
+      setList(prev => prev.filter(l => l.id !== lead.id))
+      router.refresh()
+    } catch {
+      alert('Network error. Please try again.')
+    } finally {
+      setBlocking(null)
+    }
+  }
 
   async function handleDelete(lead: Lead) {
     if (!confirm(`Remove ${lead.name} (${lead.email}) from the waitlist?`)) return
@@ -47,7 +71,24 @@ export default function LeadsTable({ leads }: { leads: Lead[] }) {
                 <td style={{ padding: '16px 20px', fontWeight: 500 }}>{lead.name}</td>
                 <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>{lead.email}</td>
                 <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: '14px' }}>{new Date(lead.createdAt).toLocaleDateString()}</td>
-                <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                <td style={{ padding: '16px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <button
+                    onClick={() => handleBlock(lead)}
+                    disabled={blocking === lead.id}
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-muted)',
+                      borderRadius: '6px',
+                      padding: '6px 14px',
+                      fontSize: '13px',
+                      marginRight: '8px',
+                      cursor: blocking === lead.id ? 'not-allowed' : 'pointer',
+                      opacity: blocking === lead.id ? 0.5 : 1,
+                    }}
+                  >
+                    {blocking === lead.id ? 'Blocking…' : 'Block'}
+                  </button>
                   <button
                     onClick={() => handleDelete(lead)}
                     disabled={deleting === lead.id}

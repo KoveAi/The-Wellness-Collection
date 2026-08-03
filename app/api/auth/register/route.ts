@@ -7,6 +7,7 @@ import { sendVerificationEmail } from '@/lib/email'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { parseBody, registerSchema } from '@/lib/validate'
 import { audit, getIp } from '@/lib/audit'
+import { isEmailBlocked } from '@/lib/blocklist'
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,15 @@ export async function POST(req: NextRequest) {
     if (error) return error
 
     const { name, email, password } = data
+
+    // Registration can't fake success — a silent no-op would leave someone
+    // unable to sign in with no explanation, so this one returns an error.
+    if (await isEmailBlocked(email)) {
+      return NextResponse.json(
+        { error: 'This email address cannot be used to register.' },
+        { status: 403 }
+      )
+    }
 
     const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
     if (existing)

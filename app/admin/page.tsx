@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ManualEnrollment from './ManualEnrollment'
 import LeadsTable from './LeadsTable'
+import BlockedEmailsTable from './BlockedEmailsTable'
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions)
@@ -45,7 +46,7 @@ export default async function AdminPage() {
   const monitorsUp     = betterMonitors.filter((m: any) => m.attributes?.status === 'up').length
 
   try {
-    const [users, courses, certificates, enrollments, auditLogs, wellnessLeads] = await Promise.all([
+    const [users, courses, certificates, enrollments, auditLogs, wellnessLeads, blockedEmails] = await Promise.all([
       prisma.user.findMany({ where: { role: 'STUDENT' }, orderBy: { createdAt: 'desc' } }),
       prisma.course.findMany({
         orderBy: { order: 'asc' },
@@ -61,6 +62,7 @@ export default async function AdminPage() {
       prisma.enrollment.findMany({ include: { user: true, course: true }, orderBy: { enrolledAt: 'desc' }, take: 20 }),
       prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
       prisma.wellnessLead.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.blockedEmail.findMany({ orderBy: { createdAt: 'desc' } }),
     ])
 
     const stats = {
@@ -95,6 +97,14 @@ export default async function AdminPage() {
               Waitlist Leads <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>— coming soon sign-ups</span>
             </h2>
             <LeadsTable leads={wellnessLeads} />
+          </section>
+
+          {/* Blocked Emails */}
+          <section style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 400, color: 'var(--text)', marginBottom: '20px' }}>
+              Blocked Emails <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>— kept out of every sign-up form</span>
+            </h2>
+            <BlockedEmailsTable entries={blockedEmails} />
           </section>
 
           {/* Courses */}

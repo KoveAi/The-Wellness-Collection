@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { parseBody, contactSchema } from '@/lib/validate'
+import { isEmailBlocked } from '@/lib/blocklist'
 
 export async function POST(req: NextRequest) {
   const limit = await checkRateLimit(req, 'contact')
@@ -12,6 +13,12 @@ export async function POST(req: NextRequest) {
   if (error) return error
 
   const { name, email, subject, message } = data
+
+  // Blocked senders get the normal success shape — the message is discarded
+  // and never reaches the inbox.
+  if (await isEmailBlocked(email)) {
+    return NextResponse.json({ success: true })
+  }
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)

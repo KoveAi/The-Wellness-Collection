@@ -37,6 +37,19 @@ The catalog lives in your user data folder, **not** in this repo:
 
 `AUDIENCE_CATALOG_DB` overrides the location. Settings shows the path and offers Back up.
 
+## Phone and web version
+
+The same catalog is available on the website at **`/admin/audience`** (admins only,
+mobile-first). It stores entries in the site database and reads and writes the same
+JSON format, so you can move data between the two:
+
+- Desktop to site: Settings > Export JSON here, then Data > Import on the site.
+- Site to desktop: Data > Export JSON on the site, then Settings > Import here.
+
+Code: `app/admin/audience/`, `app/api/admin/audience/`, `lib/audience.ts` (field
+definitions, keep in step with `entities.py`), `lib/audience-server.ts`. Tables:
+`AudienceRecord` and `AudienceLink` in `prisma/schema.prisma`.
+
 ## Test
 
 ```bash

@@ -84,6 +84,8 @@ export default function FloatingHelp() {
   }
 
   if (pathname === '/coming-soon' || pathname === '/landing') return null
+  // Audience Catalog has its own fixed action bar where this button would sit.
+  if (pathname.startsWith('/admin/audience')) return null
 
   return (
     <>

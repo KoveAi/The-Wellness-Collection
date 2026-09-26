@@ -221,6 +221,37 @@ model ChecklistState {
   updatedAt DateTime  @updatedAt
 }
 
+/// Audience Catalog (admin research tool at /admin/audience). One row per
+/// entry; `kind` is an entity key from lib/audience.ts ("personas", ...).
+/// `fields` holds every value except name, tags, and links.
+model AudienceRecord {
+  id        String         @id @default(cuid())
+  kind      String
+  name      String
+  tags      String[]       @default([])
+  fields    Json           @default("{}")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  linksOut  AudienceLink[] @relation("AudienceLinkFrom")
+  linksIn   AudienceLink[] @relation("AudienceLinkTo")
+
+  @@index([kind, name])
+}
+
+/// Relationship between two AudienceRecords. `field` is the link or ref
+/// field on the "from" record (e.g. "related_personas", "persona_id").
+/// Deleting either side removes the link.
+model AudienceLink {
+  fromId String
+  field  String
+  toId   String
+  from   AudienceRecord @relation("AudienceLinkFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to     AudienceRecord @relation("AudienceLinkTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@id([fromId, field, toId])
+  @@index([toId])
+}
+
 enum Role {
   STUDENT
   ADMIN
